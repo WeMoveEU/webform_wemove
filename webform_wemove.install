@@ -1,0 +1,42 @@
+<?php
+
+function webform_wemove_install() {
+  $webform_wemove_schema__contact_types = array('organization','individual');
+
+  $webform_wemove_schema__components = array(
+        array('name' => 'fieldset_id',
+              'label' => t('Fieldset key')),
+        array('name' => 'name_id',
+              'label' => t('Contact name field key')),
+        array('name' => 'mail_id',
+              'label' => t('Contact mail field key')),
+        array('name' => 'indicator_value',
+              'label' => t('Indicator value')),
+        );
+
+  variable_set('webform_wemove_schema__contact_types',$webform_wemove_schema__contact_types);
+  variable_set('webform_wemove_schema__components',$webform_wemove_schema__components);
+  variable_set('webform_wemove_webform_ID',null);
+  variable_set('webform_wemove_webform_indicator_ID',null);
+  variable_set('webform_wemove_webform',null);
+}
+
+function webform_wemove_uninstall() { 
+  watchdog('Webform WeMove Module','Uninstalling module');
+  variable_del('webform_wemove_webform'); 
+  variable_del('webform_wemove_webform_indicator_ID');
+  variable_del('webform_wemove_webform_ID');
+  variable_del('webform_wemove_schema__components');
+  variable_del('webform_wemove_schema__contact_types');
+}
+
+function webform_wemove_menu() {
+  $items['admin/config/content/webform/webform_wemove'] = array(
+    'title' => 'Webform WeMove',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('webform_wemove_admin_settings_form'),
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_NORMAL_ITEM,
+    'file' =>'webform_wemove.admin.inc', );
+  return $items;
+}
