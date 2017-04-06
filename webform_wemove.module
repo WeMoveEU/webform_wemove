@@ -6,34 +6,61 @@ require_once __DIR__ . '/webform_wemove.admin.inc';
 
 
 function webform_wemove_form_alter(&$form, &$form_state, $form_id) {
-  $webform_campaign_ID = variable_get('webform_wemove_webform_ID', NULL);
+
+  /************************/
+  /***** YouMove Part *****/
+  /************************/
+
+  $ymw_ID = variable_get('webform_wemove__ymw_ID', NULL);
   
-  if ($form_id !== 'webform_client_form_'.$webform_campaign_ID) return;
+  if ($form_id !== 'webform_client_form_'.$ymw_ID) return;
 
   if(user_is_logged_in()) {
-    $contact_type_indicator = variable_get('webform_wemove_webform_indicator_ID', NULL); 
-    $webform = variable_get('webform_wemove_webform');
-    $contact_types = variable_get('webform_wemove_schema__contact_types',null);
+    //Hide section with user creation fields
+    $contact_type_indicator = variable_get('webform_wemove__ymw_indicator_ID', NULL); 
+    $settings = variable_get('webform_wemove__ymw_settings');
+    $contact_types = variable_get('webform_wemove__ymw_contact_types',null);
 
     hide($form['submitted'][$contact_type_indicator]);
     foreach($contact_types as $contact_type) {
-      hide($form['submitted'][$webform[$contact_type]['fieldset_id']]);
+      hide($form['submitted'][$settings[$contact_type]['fieldset_id']]);
     }
+
   } else {
-    $form['#validate'][] = '_user_exists_validate_webform_campaign';
+    $form['#validate'][] = '_ymw_user_exists_validate';
+  }
+
+  //Edition: disable some webform fields
+  if($form['#submission']){
+    //Get disabled field keys
+    $fields = explode(',',variable_get('webform_wemove__ymw_settings')['disabled_fields']);
+    foreach($fields as $field) {
+      $form['submitted'][$field]['#attributes']['disabled'] = 'disabled';
+    }    
   }
 }
 
+
 function webform_wemove_webform_submission_presave($node,&$submission) {
+
+  /************************/
+  /***** YouMove Part *****/
+  /************************/
+
   if(user_is_logged_in()) return;
 
-  $webform_campaign_ID = variable_get('webform_wemove_webform_ID', NULL);
+  $ymw_ID = variable_get('webform_wemove__ymw_ID', NULL);
   $user = variable_get('webform_wemove_user_temp',NULL);
   
-  if($node->nid == $webform_campaign_ID && !empty($user)) {
+  if($node->nid == $ymw_ID && !empty($user)) {
     try {
-      //Create user from webform submission
-      $account = _user_create($user['name'],$user['mail']);
+
+      //Create user from webform submission (with roles)
+      $role_name = variable_get('webform_wemove__ymw_user_role_name');
+      $role = user_role_load_by_name($role_name); 
+      $rid = $role->rid;
+      
+      $account = _user_create($user['name'],$user['mail'],array($rid => $role_name));
       variable_del('webform_wemove_user_temp');
 
       //Set permission to webform submission
@@ -47,62 +74,36 @@ function webform_wemove_webform_submission_presave($node,&$submission) {
 }
 
 
-function _user_exists_validate_webform_campaign(&$form, &$form_state) {
+function _ymw_user_exists_validate(&$form, &$form_state) {
+
  try {
-   $webform = variable_get('webform_wemove_webform');
+   $settings = variable_get('webform_wemove__ymw_settings');
    $submission_values = $form_state['input']['submitted'];
  
-   if(isset($webform) && isset($submission_values)) {
-     $contact_type = _check_contact_type($submission_values,$webform);
+   if(isset($settings) && isset($submission_values)) {
+     $contact_type = _ymw_check_contact_type($submission_values,$settings);
     
-     $name = _get_value($webform[$contact_type]['name_id'],$submission_values);
-     $mail = _get_value($webform[$contact_type]['mail_id'],$submission_values);
+     $name = _get_value($settings[$contact_type]['name_id'],$submission_values);
+     $mail = _get_value($settings[$contact_type]['mail_id'],$submission_values);
      
      if(!empty($name) && user_load_by_name($name)) {form_set_error('',t('Contact name already exists in system.'));} 
      if(!empty($mail) && user_load_by_mail($mail)) {form_set_error('',t('Contact mail already exists in system.'));}          
    
      variable_set('webform_wemove_user_temp',array('name'=>$name,'mail'=>$mail));
+
    }
  } catch (Exception $e) {
    drupal_set_message(t('Some errors accured, please contact with system administrator'),'error');
-   watchdog('webform_wemove::_user_exists_validate_webform_campaign()', $e->getMessage(),null, WATCHDOG_ERROR);
+   watchdog('webform_wemove::_ymw_user_exists_validate()', $e->getMessage(),null, WATCHDOG_ERROR);
  }  
 
 }
 
-function _user_create($name,$mail) {
-  $account = NULL;
 
-  try {
-    if(!empty($name) && !empty($mail)) {
-      $password = user_password(8);
- 
-      $fields = array(
-        'name' => $name,
-        'mail' => $mail,
-        'pass' => $password,
-        'status' => 1,
-        'init' => 'email address',
-        'roles' => array(DRUPAL_AUTHENTICATED_RID => 'authenticated user',),
-      );
- 
-      $account = user_save('', $fields);
-      drupal_mail('user', 'register_no_approval_required', $mail, NULL, array('account' => $account), variable_get('site_mail', 'noreply@example.com')); 
+function _ymw_check_contact_type($submission_values,$contact_types_meta) {
 
-      return $account;
-    } else {
-      throw new Exception('Cannot create new user: user name or email empty.');
-    }
-  } catch (Exception $e) {
-      drupal_set_message(t('Some errors accured, please contact with system administrator'),'error');
-      watchdog('webform_wemove::_user_create()', $e->getMessage(),null, WATCHDOG_ERROR);
-  }
-}
-
-
-function _check_contact_type($submission_values,$contact_types_meta) {
-  $contact_type_indicator = variable_get('webform_wemove_webform_indicator_ID', NULL);
-  $contact_types = variable_get('webform_wemove_schema__contact_types',null);
+  $contact_type_indicator = variable_get('webform_wemove__ymw_indicator_ID', NULL);
+  $contact_types = variable_get('webform_wemove__ymw_contact_types',null);
   
   try {
     $contact_type_indicator_value = _get_value($contact_type_indicator,$submission_values);
@@ -117,7 +118,37 @@ function _check_contact_type($submission_values,$contact_types_meta) {
     throw new Exception('Cannot set contact type: not matched value finded.');
   } catch (Exception $e) {
       drupal_set_message(t('Some errors accured, please contact with system administrator'),'error');
-      watchdog('webform_wemove::_check_contact_type()', $e->getMessage(),null, WATCHDOG_ERROR);
+      watchdog('webform_wemove::_ymw_check_contact_type()', $e->getMessage(),null, WATCHDOG_ERROR);
+  }
+}
+
+
+function _user_create($name,$mail,$roles) {
+  $account = NULL;
+
+  try {
+    if(!empty($name) && !empty($mail)) {
+      $password = user_password(8);
+ 
+      $fields = array(
+        'name' => $name,
+        'mail' => $mail,
+        'pass' => $password,
+        'status' => 1,
+        'init' => 'email address',
+        'roles' => $roles,
+      );
+ 
+      $account = user_save('', $fields);
+      drupal_mail('user', 'register_no_approval_required', $mail, NULL, array('account' => $account), variable_get('site_mail', 'noreply@example.com')); 
+
+      return $account;
+    } else {
+      throw new Exception('Cannot create new user: user name or email empty.');
+    }
+  } catch (Exception $e) {
+      drupal_set_message(t('Some errors accured, please contact with system administrator'),'error');
+      watchdog('webform_wemove::_user_create()', $e->getMessage(),null, WATCHDOG_ERROR);
   }
 }
 

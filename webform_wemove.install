@@ -1,9 +1,13 @@
 <?php
 
 function webform_wemove_install() {
-  $webform_wemove_schema__contact_types = array('organization','individual');
 
-  $webform_wemove_schema__components = array(
+  /************************/
+  /***** YouMove Part *****/
+  /************************/
+
+  $webform_wemove__ymw_contact_types = array('organization','individual');
+  $webform_wemove__ymw_components = array(
         array('name' => 'fieldset_id',
               'label' => t('Fieldset key')),
         array('name' => 'name_id',
@@ -14,25 +18,46 @@ function webform_wemove_install() {
               'label' => t('Indicator value')),
         );
 
-  variable_set('webform_wemove_schema__contact_types',$webform_wemove_schema__contact_types);
-  variable_set('webform_wemove_schema__components',$webform_wemove_schema__components);
-  variable_set('webform_wemove_webform_ID',null);
-  variable_set('webform_wemove_webform_indicator_ID',null);
-  variable_set('webform_wemove_webform',null);
+  variable_set('webform_wemove__ymw_contact_types',$webform_wemove__ymw_contact_types);
+  variable_set('webform_wemove__ymw_components',$webform_wemove__ymw_components);
+
+  variable_set('webform_wemove__ymw_ID',null);
+  variable_set('webform_wemove__ymw_indicator_ID',null);
+  variable_set('webform_wemove__ymw_settings',null);
+
+  //Create new role
+  try {
+    $role = new stdClass();
+    $role->name = 'youmove_campaigner';
+    user_role_save($role);
+    variable_set('webform_wemove__ymw_user_role_name','youmove_campaigner');
+
+  } catch(Exception $e) {
+    drupal_set_message(t('Some errors accured, please contact with system administrator'),'error');
+    watchdog('webform_wemove::webform_wemove_install()', $e->getMessage(),null, WATCHDOG_ERROR);
+  }
 }
 
 function webform_wemove_uninstall() { 
+
+  /************************/
+  /***** YouMove Part *****/
+  /************************/
+
   watchdog('Webform WeMove Module','Uninstalling module');
-  variable_del('webform_wemove_webform'); 
-  variable_del('webform_wemove_webform_indicator_ID');
-  variable_del('webform_wemove_webform_ID');
-  variable_del('webform_wemove_schema__components');
-  variable_del('webform_wemove_schema__contact_types');
+  variable_del('webform_wemove__ymw_settings'); 
+  variable_del('webform_wemove__ymw_indicator_ID');
+  variable_del('webform_wemove__ymw_ID');
+  variable_del('webform_wemove__ymw_components');
+  variable_del('webform_wemove__ymw_contact_types');
+
+  user_role_delete(variable_get('webform_wemove__ymw_user_role_name'));
 }
 
 function webform_wemove_menu() {
+
   $items['admin/config/content/webform/webform_wemove'] = array(
-    'title' => 'Webform WeMove',
+    'title' => 'WEMOVE - YouMove Webform',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('webform_wemove_admin_settings_form'),
     'access arguments' => array('administer site configuration'),
