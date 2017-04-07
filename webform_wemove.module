@@ -59,7 +59,7 @@ function webform_wemove_webform_submission_presave($node,&$submission) {
       $role_name = variable_get('webform_wemove__ymw_user_role_name');
       $role = user_role_load_by_name($role_name); 
       $rid = $role->rid;
-      
+             
       $account = _user_create($user['name'],$user['mail'],array($rid => $role_name));
       variable_del('webform_wemove_user_temp');
 
