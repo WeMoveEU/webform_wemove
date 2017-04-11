@@ -1,5 +1,23 @@
 <?php
 
+function webform_wemove_menu() {
+
+  /************************/
+  /***** YouMove Part *****/
+  /************************/
+
+  $items['admin/config/content/webform/webform_wemove'] = array(
+    'title' => 'WEMOVE - YouMove Webform',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('webform_wemove_admin_settings_form'),
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_NORMAL_ITEM,
+    'file' =>'webform_wemove.admin.inc', );
+  return $items;
+}
+
+
+
 function webform_wemove_admin_settings_form($form, &$form_state) {
 
   /************************/

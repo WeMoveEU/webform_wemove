@@ -54,14 +54,3 @@ function webform_wemove_uninstall() {
   user_role_delete(variable_get('webform_wemove__ymw_user_role_name'));
 }
 
-function webform_wemove_menu() {
-
-  $items['admin/config/content/webform/webform_wemove'] = array(
-    'title' => 'WEMOVE - YouMove Webform',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('webform_wemove_admin_settings_form'),
-    'access arguments' => array('administer site configuration'),
-    'type' => MENU_NORMAL_ITEM,
-    'file' =>'webform_wemove.admin.inc', );
-  return $items;
-}
