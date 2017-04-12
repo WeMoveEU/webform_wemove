@@ -32,10 +32,16 @@ function webform_wemove_admin_settings_form($form, &$form_state) {
     '#maxlength' => 4,
     '#required' => TRUE,
   );
-  $form['ymw_indicator_ID'] = array(
+  $form['ymw_contact_type_ID'] = array(
     '#type' => 'textfield',
     '#title' => t('Webform contact types field key'),
-    '#default_value' => variable_get('webform_wemove__ymw_indicator_ID',null),
+    '#default_value' => variable_get('webform_wemove__ymw_settings')['contact_type_ID'],
+    '#required' => TRUE,
+  );
+  $form['ymw_is_published_ID'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Webform publishing indicator field key'),
+    '#default_value' => variable_get('webform_wemove__ymw_settings')['published_ID'],
     '#required' => TRUE,
   );
 
@@ -53,7 +59,7 @@ function webform_wemove_admin_settings_form($form, &$form_state) {
       $form['ymw_'.$contact_type]['ymw_'.$contact_type.'_'.$form_component['name']] = array(
         '#type' => 'textfield',
         '#title' => $form_component['label'],
-        '#default_value' => variable_get(webform_wemove__ymw_settings)[$contact_type][$form_component['name']],
+        '#default_value' => variable_get('webform_wemove__ymw_settings')[$contact_type][$form_component['name']],
         '#required' => TRUE,
       );
     }
@@ -83,8 +89,9 @@ function _ymw_admin_settings_submit($form, $form_state) {
     }
   }
   $settings['disabled_fields'] =  $form_state['values']['ymw_disabled_fields'];
+  $settings['published_ID'] =  $form_state['values']['ymw_is_published_ID'];
+  $settings['contact_type_ID'] =  $form_state['values']['ymw_contact_type_ID'];
 
   variable_set('webform_wemove__ymw_ID', $form_state['values']['ymw_ID']);
-  variable_set('webform_wemove__ymw_indicator_ID',$form_state['values']['ymw_indicator_ID']);
   variable_set('webform_wemove__ymw_settings',$settings);
 }

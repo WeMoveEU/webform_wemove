@@ -17,9 +17,9 @@ function webform_wemove_form_alter(&$form, &$form_state, $form_id) {
 
   if(user_is_logged_in()) {
     //Hide section with user creation fields
-    $contact_type_indicator = variable_get('webform_wemove__ymw_indicator_ID', NULL); 
     $settings = variable_get('webform_wemove__ymw_settings');
     $contact_types = variable_get('webform_wemove__ymw_contact_types',null);
+    $contact_type_indicator = $settings['contact_type_ID'];
 
     hide($form['submitted'][$contact_type_indicator]);
     foreach($contact_types as $contact_type) {
@@ -30,8 +30,13 @@ function webform_wemove_form_alter(&$form, &$form_state, $form_id) {
     $form['#validate'][] = '_ymw_user_exists_validate';
   }
 
-  //Edition: disable some webform fields
-  if($form['#submission']){
+  //Edition: disable some webform fields for edition and ready to publish
+  $is_published_field_ID = $settings['published_ID'];
+ 
+  if($form['#submission'] && $form['submitted'][$is_published_field_ID] && $form['submitted'][$is_published_field_ID]['#default_value']){
+    //Hide publishing field
+    hide($form['submitted'][$is_published_field_ID]);
+
     //Get disabled field keys
     $fields = explode(',',variable_get('webform_wemove__ymw_settings')['disabled_fields']);
     foreach($fields as $field) {
@@ -47,6 +52,7 @@ function webform_wemove_webform_submission_presave($node,&$submission) {
   /***** YouMove Part *****/
   /************************/
 
+  /***** Create new user based on webform *****/
   if(user_is_logged_in()) return;
 
   $ymw_ID = variable_get('webform_wemove__ymw_ID', NULL);
@@ -102,7 +108,7 @@ function _ymw_user_exists_validate(&$form, &$form_state) {
 
 function _ymw_check_contact_type($submission_values,$contact_types_meta) {
 
-  $contact_type_indicator = variable_get('webform_wemove__ymw_indicator_ID', NULL);
+  $contact_type_indicator = variable_get('webform_wemove__ymw_settings')['contact_type_ID'];
   $contact_types = variable_get('webform_wemove__ymw_contact_types',null);
   
   try {

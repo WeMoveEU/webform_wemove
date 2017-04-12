@@ -1,0 +1,54 @@
+
+*** These modified files were found in JOE when it aborted on Tue Apr  4 18:32:15 2017
+*** JOE was aborted because the terminal closed
+
+*** File '(Unnamed)'
+ margin-top: 20px;
+@gray-lighter-footer
+navbar-wrapper
+text-color
+extend
+navbar
+navbar-header
+carousel
+_get_submission_value
+
+*** File '(Unnamed)'
+webform_wemove.module
+webform_wemove.module
+webform_wemove.module
+webform_wemove.module
+webform_wemove.module
+webform_wemove.module
+webform_wemove.module
+webform_wemove.module
+webform_wemove.module
+webform_wemove.module
+webform_wemove.module
+webform_wemove.module
+webform_wemove.module
+webform_wemove.module
+webform_wemove.module
+webform_wemove.module
+webform_wemove.module
+webform_wemove.module
+webform_wemove.module
+webform_wemove.module
+webform_wemove.module
+webform_wemove.module
+webform_wemove.module
+webform_wemove.module
+webform_wemove.module
+webform_wemove.module
+webform_wemove.module
+webform_wemove.module
+webform_wemove.module
+webform_wemove.module
+webform_wemove.module
+webform_wemove.module
+
+*** File '* Startup Log *'
+Processing '/etc/joe/joerc'...
+Processing '/etc/joe/ftyperc'...
+Finished processing /etc/joe/ftyperc
+Finished processing /etc/joe/joerc
