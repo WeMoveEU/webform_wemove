@@ -68,6 +68,7 @@ function webform_wemove_webform_submission_presave($node,&$submission) {
       $role_name = variable_get('webform_wemove__ymw_user_role_name');
       $role = user_role_load_by_name($role_name); 
       $rid = $role->rid;
+
              
       $account = _user_create($user['name'],$user['mail'],array($rid => $role_name));
       variable_del('webform_wemove_user_temp');
@@ -82,6 +83,18 @@ function webform_wemove_webform_submission_presave($node,&$submission) {
   }
 }
 
+function webform_wemove_mail($key, &$message, $params) {
+  
+  $language = $message['language'];
+  $variables = array('user' => $params['account']);
+
+  $message['subject'] .= _user_mail_text($key . '_subject', $language,$variables);
+  //$message['body'][] = _user_mail_text($key . '_body', $language, $variables);
+  $text = variable_get('user_mail_' . $key . '_body', FALSE);
+  $text_t = t($text, array(), array('langcode' => $language->language));
+  $message['body'][] = token_replace($text_t, $variables, array('language' => $language, 'callback' => 'user_mail_tokens', 'sanitize' => FALSE, 'clear' => TRUE));
+
+}
 
 function _ymw_user_exists_validate(&$form, &$form_state) {
 
@@ -152,20 +165,29 @@ function _user_create($name,$mail,$roles) {
   $account = NULL;
 
   if(!empty($name) && !empty($mail)) {
+      //Get current language as default user language
+      global $language;
       $password = user_password(8);
  
       $fields = array(
         'name' => $name,
         'mail' => $mail,
         'pass' => $password,
+        'language' => $language->language, 
         'status' => 1,
         'init' => 'email address',
         'roles' => $roles,
       );
  
       $account = user_save('', $fields);
-      drupal_mail('user', 'register_no_approval_required', $mail, NULL, array('account' => $account), variable_get('site_mail', 'noreply@example.com')); 
+      drupal_mail('webform_wemove', 
+                  'register_no_approval_required', 
+                  $mail, 
+                  $language, 
+                  array('account' => $account), 
+                  variable_get('site_mail', 'noreply@example.com'));
 
+      
       return $account;
   } else {
       throw new Exception('Cannot create new user: user name or email empty.');
@@ -183,3 +205,4 @@ function _get_value($key,$values) {
   }
   return NULL;
 }
+
