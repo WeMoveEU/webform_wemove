@@ -88,7 +88,11 @@ function webform_wemove_mail($key, &$message, $params) {
   $language = $message['language'];
   $variables = array('user' => $params['account']);
 
-  $message['subject'] .= _user_mail_text($key . '_subject', $language,$variables);
+  //$message['subject'] .= _user_mail_text($key . '_subject', $language,$variables);
+  $subject = variable_get('user_mail_' . $key . '_subject', FALSE);
+  $subject_t =  t($subject, array(), array('langcode' => $language->language));
+  $message['subject'] .= token_replace($subject_t, $variables, array('language' => $language, 'callback' => 'user_mail_tokens', 'sanitize' => FALSE, 'clear' => TRUE)); 
+
   //$message['body'][] = _user_mail_text($key . '_body', $language, $variables);
   $text = variable_get('user_mail_' . $key . '_body', FALSE);
   $text_t = t($text, array(), array('langcode' => $language->language));
