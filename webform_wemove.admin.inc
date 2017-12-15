@@ -7,7 +7,7 @@ function webform_wemove_menu() {
   /************************/
 
   $items['admin/config/content/webform/webform_wemove'] = array(
-    'title' => 'WEMOVE - YouMove Webform',
+    'title' => 'WEMOVE - YouMove Webform (Campaign)',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('webform_wemove_admin_settings_form'),
     'access arguments' => array('administer site configuration'),
@@ -67,10 +67,33 @@ function webform_wemove_admin_settings_form($form, &$form_state) {
   
   $form['ymw_disabled_fields'] = array(
     '#type' => 'textarea',
-    '#title' => t('Webform disabled fields (edition)'),
+    '#title' => t('Webform submission disabled fields (edition)'),
     '#default_value' => variable_get('webform_wemove__ymw_settings')['disabled_fields'],
     '#required' => TRUE,
     '#description' => t('Field keys, separated by commas'),
+  );
+  
+  $form['ymw_hidden_fields'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Webform submission hidden fields (preview)'),
+    '#default_value' => variable_get('webform_wemove__ymw_settings')['hidden_fields'],
+    '#required' => TRUE,
+    '#description' => t('Field keys, separated by commas'),
+  );
+  
+  $form['ymw_submission_view_title'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Webform submission viewed title'),
+    '#default_value' => variable_get('webform_wemove__ymw_settings')['submission_view_title'],
+    '#required' => TRUE,
+  );
+  
+  $form['ymw_submission_edit_title'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Webform submission edited title'),
+    '#default_value' =>
+    variable_get('webform_wemove__ymw_settings')['submission_edit_title'],
+    '#required' => TRUE,
   );
   
   $form['#submit'][] = '_ymw_admin_settings_submit';
@@ -89,8 +112,11 @@ function _ymw_admin_settings_submit($form, $form_state) {
     }
   }
   $settings['disabled_fields'] =  $form_state['values']['ymw_disabled_fields'];
+  $settings['hidden_fields'] =  $form_state['values']['ymw_hidden_fields'];
   $settings['published_ID'] =  $form_state['values']['ymw_is_published_ID'];
   $settings['contact_type_ID'] =  $form_state['values']['ymw_contact_type_ID'];
+  $settings['submission_view_title'] = $form_state['values']['ymw_submission_view_title'];
+  $settings['submission_edit_title'] = $form_state['values']['ymw_submission_edit_title'];
 
   variable_set('webform_wemove__ymw_ID', $form_state['values']['ymw_ID']);
   variable_set('webform_wemove__ymw_settings',$settings);

@@ -15,34 +15,37 @@ function webform_wemove_form_alter(&$form, &$form_state, $form_id) {
   
   if ($form_id !== 'webform_client_form_'.$ymw_ID) return;
 
+  $settings = variable_get('webform_wemove__ymw_settings'); 
+
   if(user_is_logged_in()) {
-    //Hide section with user creation fields
-    $settings = variable_get('webform_wemove__ymw_settings');
+    //Disable section with user creation fields, 
+    //because user is already logged
     $contact_types = variable_get('webform_wemove__ymw_contact_types',null);
     $contact_type_indicator = $settings['contact_type_ID'];
-
-    hide($form['submitted'][$contact_type_indicator]);
+    _set_webform_component($contact_type_indicator,$form,'#attributes',array('disabled' => '1'));
+    
     foreach($contact_types as $contact_type) {
-      hide($form['submitted'][$settings[$contact_type]['fieldset_id']]);
+      $fieldset_id = $settings[$contact_type]['fieldset_id'];
+      _set_webform_component($fieldset_id,$form,'#attributes',array('disabled' => '1'));
     }
 
   } else {
     $form['#validate'][] = '_ymw_user_exists_validate';
   }
-
-  //Edition: disable some webform fields for edition and ready to publish
+   
+  //Disable some webform fields while edition and when submission ready to publish
   if($form['#submission']) {
     $is_published_field_ID = $settings['published_ID'];
     $is_published_field_value = _get_webform_submission_value($form,$is_published_field_ID);
 
     if($is_published_field_value){
-      //Hide publishing field
-      hide($form['submitted'][$is_published_field_ID]);
+      //Set disabled publishing field
+      _set_webform_component($is_published_field_ID,$form,'#attributes',array('disabled' => '1'));
 
-      //Get disabled field keys
+      //Set disabled field keys
       $fields = explode(',',variable_get('webform_wemove__ymw_settings')['disabled_fields']);
       foreach($fields as $field) {
-        $form['submitted'][$field]['#attributes']['disabled'] = 'disabled';
+        _set_webform_component($field,$form,'#attributes',array('disabled' => '1')); 
       }    
     }
   }
@@ -83,6 +86,18 @@ function webform_wemove_webform_submission_presave($node,&$submission) {
   }
 }
 
+
+function webform_wemove_webform_submission_render_alter(&$renderable){
+  $settings = variable_get('webform_wemove__ymw_settings');
+
+  //Hide configured field keys
+  $fields = explode(',',variable_get('webform_wemove__ymw_settings')['hidden_fields']);
+  foreach($fields as $field) {
+    _set_webform_component($field,$renderable,'#access',FALSE);
+  }
+}
+
+
 function webform_wemove_mail($key, &$message, $params) {
   
   $language = $message['language'];
@@ -98,6 +113,29 @@ function webform_wemove_mail($key, &$message, $params) {
   $text_t = t($text, array(), array('langcode' => $language->language));
   $message['body'][] = token_replace($text_t, $variables, array('language' => $language, 'callback' => 'user_mail_tokens', 'sanitize' => FALSE, 'clear' => TRUE));
 
+}
+
+function webform_wemove_menu_alter(&$items) {
+  $items['node/%webform_menu/submission/%webform_menu_submission']['page callback'] = 'webform_wemove_webform_submission_view_page';
+  $items['node/%webform_menu/submission/%webform_menu_submission/edit']['page callback'] = 'webform_wemove_webform_submission_edit_page';
+}
+
+function webform_wemove_webform_submission_view_page($node, $submission, $format) {
+
+  $return_value = webform_submission_page($node, $submission, $format);
+  $settings = variable_get('webform_wemove__ymw_settings');
+
+  if(isset($settings['submission_view_title'])){drupal_set_title(t($settings['submission_view_title']));}
+  return $return_value;
+}
+
+function webform_wemove_webform_submission_edit_page($node, $submission, $format) {
+
+  $return_value = webform_submission_page($node, $submission, $format);
+  $settings = variable_get('webform_wemove__ymw_settings');
+
+  if(isset($settings['submission_edit_title'])){drupal_set_title(t($settings['submission_edit_title']));}
+  return $return_value;
 }
 
 function _ymw_user_exists_validate(&$form, &$form_state) {
@@ -201,9 +239,32 @@ function _user_create($name,$mail,$roles) {
 
 function _get_value($key,$values) {
   foreach($values as $key_value => $value){
-      if($key_value == $key) {return $value;}
+      if($key_value === $key) {return $value;}
       elseif(is_array($value)) {
            $r = _get_value($key,$value);
+           if(isset($r)){return $r;}
+      }
+  }
+  return NULL;
+}
+
+function &_set_webform_component($key,&$values,$attribute_name,$attribute_value) {
+  foreach($values as $key_value => &$value){
+      if($key_value === $key) {
+           if(is_array($values[$key_value][$attribute_name])) {
+             if(is_array($attribute_value)) {
+               $array1 = $values[$key_value][$attribute_name];
+               $values[$key_value][$attribute_name] = array_merge($array1,$attribute_value);
+             } else {
+               $values[$key_value][$attribute_name][] = $attribute_value;
+             }
+             
+           } else {
+             $values[$key_value][$attribute_name] = $attribute_value;
+           }
+           return $values[$key_value];
+      } elseif(is_array($value)) {
+           $r = _set_webform_component($key,$value,$attribute_name,$attribute_value);
            if(isset($r)){return $r;}
       }
   }
