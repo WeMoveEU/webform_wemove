@@ -33,11 +33,31 @@ function webform_wemove_form_alter(&$form, &$form_state, $form_id) {
     $form['#validate'][] = '_ymw_user_exists_validate';
   }
    
-  //Disable some webform fields while edition and when submission ready to publish
+  //Disable some webform fields while edition 
+  //(so webform submission already exists) 
+  //and option 'ready to publish' is checked (value=1) 
   if($form['#submission']) {
     $is_published_field_ID = $settings['published_ID'];
-    $is_published_field_value = _get_webform_submission_value($form,$is_published_field_ID);
 
+    // Get field (option 'ready to publish') value from submission
+    $components = $form['#node']->webform['components'];
+    $data = $form['#submission']->data;
+    $field_key_index = NULL;
+
+    foreach ($components as $key => $component) {
+      if($component['form_key'] == $is_published_field_ID) {
+          $field_key_index = $key;
+          break;
+      }
+    }
+    foreach ($data as $key => $values) {
+      if($key == $field_key_index) {
+        $is_published_field_value = (isset($values[0])) ? $values[0] : NULL;
+        break;
+      }
+    }
+
+    //Disable special fields
     if($is_published_field_value){
       //Set disabled publishing field
       _set_webform_component($is_published_field_ID,$form,'#attributes',array('disabled' => '1'));
@@ -63,10 +83,9 @@ function webform_wemove_webform_submission_presave($node,&$submission) {
 
   $ymw_ID = variable_get('webform_wemove__ymw_ID', NULL);
   $user = variable_get('webform_wemove_user_temp',NULL);
-  
+
   if($node->nid == $ymw_ID && !empty($user)) {
     try {
-
       //Create user from webform submission (with roles)
       $role_name = variable_get('webform_wemove__ymw_user_role_name');
       $role = user_role_load_by_name($role_name); 
@@ -142,21 +161,17 @@ function _ymw_user_exists_validate(&$form, &$form_state) {
 
  //Check if contact type already submitted
  $contact_type_indicator = variable_get('webform_wemove__ymw_settings')['contact_type_ID'];
- if(!isset($form['submitted'][$contact_type_indicator])) return;
 
  try {
    $settings = variable_get('webform_wemove__ymw_settings');
    $submission_values = $form_state['input']['submitted'];
- 
+
    if(isset($settings) && isset($submission_values)) {
      $contact_type = _ymw_check_contact_type($submission_values,$settings,$contact_type_indicator);
-    
-     $name = _get_value($settings[$contact_type]['name_id'],$submission_values);
-     $mail = _get_value($settings[$contact_type]['mail_id'],$submission_values);
-     
+     $name = _get_value_recursive($settings[$contact_type]['name_id'],$submission_values);
+     $mail = _get_value_recursive($settings[$contact_type]['mail_id'],$submission_values);
      if(!empty($name) && user_load_by_name($name)) {form_set_error('',t('Contact name already exists in system.'));} 
      if(!empty($mail) && user_load_by_mail($mail)) {form_set_error('',t('Contact mail already exists in system.'));}          
-   
      variable_set('webform_wemove_user_temp',array('name'=>$name,'mail'=>$mail));
 
    }
@@ -172,7 +187,7 @@ function _ymw_check_contact_type($submission_values,$contact_types_meta,$contact
 
   $contact_types = variable_get('webform_wemove__ymw_contact_types',null);
   
-  $contact_type_indicator_value = _get_value($contact_type_indicator,$submission_values);
+  $contact_type_indicator_value = _get_value_recursive($contact_type_indicator,$submission_values);
   if(!empty($contact_type_indicator_value)) {
       foreach($contact_types as $contact_type) {
         $contact_type_indicator_value_curr = $contact_types_meta[$contact_type]['indicator_value'];
@@ -185,23 +200,6 @@ function _ymw_check_contact_type($submission_values,$contact_types_meta,$contact
   
 }
 
-function _get_webform_submission_value($webform,$field_key) {
-
-  $components = $webform['#node']->webform['components'];
-  $data = $webform['#submission']->data;
-  $field_key_index = NULL;
- 
-  foreach ($components as $key => $component) {
-      if($component['form_key'] == $field_key) {
-          $field_key_index = $key;
-          break; 
-      }
-  }
-  foreach ($data as $key => $values) {
-      if($key == $field_key_index)
-      return (isset($values[0])) ? $values[0] : NULL;
-  }
-}
 
 function _user_create($name,$mail,$roles) {
   $account = NULL;
@@ -237,11 +235,11 @@ function _user_create($name,$mail,$roles) {
 }
 
 
-function _get_value($key,$values) {
+function _get_value_recursive($key,$values) {
   foreach($values as $key_value => $value){
       if($key_value === $key) {return $value;}
       elseif(is_array($value)) {
-           $r = _get_value($key,$value);
+           $r = _get_value_recursive($key,$value);
            if(isset($r)){return $r;}
       }
   }
