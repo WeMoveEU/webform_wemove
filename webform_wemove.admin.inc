@@ -32,12 +32,6 @@ function webform_wemove_admin_settings_form($form, &$form_state) {
     '#maxlength' => 4,
     '#required' => TRUE,
   );
-  $form['ymw_contact_type_ID'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Webform contact types field key'),
-    '#default_value' => variable_get('webform_wemove__ymw_settings')['contact_type_ID'],
-    '#required' => TRUE,
-  );
   $form['ymw_is_published_ID'] = array(
     '#type' => 'textfield',
     '#title' => t('Webform publishing indicator field key'),
@@ -45,24 +39,21 @@ function webform_wemove_admin_settings_form($form, &$form_state) {
     '#required' => TRUE,
   );
 
-  $contact_types = variable_get('webform_wemove__ymw_contact_types',null);
   $form_components = variable_get('webform_wemove__ymw_components',null);
   
-  foreach($contact_types as $contact_type) {
-    $form['ymw_'.$contact_type] = array(
-      '#type' => 'fieldset',
-      '#title' => t('Contact: '.$contact_type),
-      '#collapsible' => false,
-    );
+  $form['ymw_contact'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Contact:'),
+    '#collapsible' => false,
+  );
        
-    foreach($form_components as $form_component) {
-      $form['ymw_'.$contact_type]['ymw_'.$contact_type.'_'.$form_component['name']] = array(
+  foreach($form_components as $form_component) {
+    $form['ymw_contact']['ymw_contact_'.$form_component['name']] = array(
         '#type' => 'textfield',
         '#title' => $form_component['label'],
-        '#default_value' => variable_get('webform_wemove__ymw_settings')[$contact_type][$form_component['name']],
+        '#default_value' => variable_get('webform_wemove__ymw_settings')[$form_component['name']],
         '#required' => TRUE,
-      );
-    }
+    );
   }
   
   $form['ymw_disabled_fields'] = array(
@@ -102,19 +93,15 @@ function webform_wemove_admin_settings_form($form, &$form_state) {
 }
 
 function _ymw_admin_settings_submit($form, $form_state) {
-  $contact_types = variable_get('webform_wemove__ymw_contact_types',null);
   $form_components = variable_get('webform_wemove__ymw_components',null);
   $settings = array();
 
-  foreach($contact_types as $contact_type) {
-    foreach($form_components as $form_component) {
-      $settings[$contact_type][$form_component['name']] = $form_state['values']['ymw_'.$contact_type.'_'.$form_component['name']];
-    }
+  foreach($form_components as $form_component) {
+      $settings[$form_component['name']] = $form_state['values']['ymw_contact_'.$form_component['name']];
   }
   $settings['disabled_fields'] =  $form_state['values']['ymw_disabled_fields'];
   $settings['hidden_fields'] =  $form_state['values']['ymw_hidden_fields'];
   $settings['published_ID'] =  $form_state['values']['ymw_is_published_ID'];
-  $settings['contact_type_ID'] =  $form_state['values']['ymw_contact_type_ID'];
   $settings['submission_view_title'] = $form_state['values']['ymw_submission_view_title'];
   $settings['submission_edit_title'] = $form_state['values']['ymw_submission_edit_title'];
 

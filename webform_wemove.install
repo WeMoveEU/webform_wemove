@@ -6,35 +6,32 @@ function webform_wemove_install() {
   /***** YouMove Part *****/
   /************************/
 
-  $webform_wemove__ymw_contact_types = array('organization','individual');
   $webform_wemove__ymw_components = array(
-        array('name' => 'fieldset_id',
+        array('name' => 'contact__fieldset_id',
               'label' => t('Fieldset key')),
-        array('name' => 'name_id',
+        array('name' => 'contact__name_id',
               'label' => t('Contact name field key')),
-        array('name' => 'mail_id',
+        array('name' => 'contact__mail_id',
               'label' => t('Contact mail field key')),
-        array('name' => 'indicator_value',
-              'label' => t('Indicator value')),
         );
 
-  variable_set('webform_wemove__ymw_contact_types',$webform_wemove__ymw_contact_types);
   variable_set('webform_wemove__ymw_components',$webform_wemove__ymw_components);
 
   variable_set('webform_wemove__ymw_ID',null);
   variable_set('webform_wemove__ymw_settings',array());
 
   //Create new role
-  try {
-    $role = new stdClass();
-    $role->name = 'youmove_campaigner';
-    user_role_save($role);
-    variable_set('webform_wemove__ymw_user_role_name','youmove_campaigner');
+  //try {
+  //  $role = new stdClass();
+  //  $role->name = 'youmove_campaigner';
+  //  user_role_save($role);
+  //  variable_set('webform_wemove__ymw_user_role_name','youmove_campaigner');
 
-  } catch(Exception $e) {
-    drupal_set_message(t('Some errors accured, please contact with system administrator'),'error');
-    watchdog('webform_wemove::webform_wemove_install()', $e->getMessage(),null, WATCHDOG_ERROR);
-  }
+  //} catch(Exception $e) {
+  //  drupal_set_message(t('Some errors accured, please contact with system administrator'),'error');
+  //  watchdog('webform_wemove::webform_wemove_install()', $e->getMessage(),null, WATCHDOG_ERROR);
+  //}
+
 }
 
 function webform_wemove_uninstall() { 
@@ -43,12 +40,11 @@ function webform_wemove_uninstall() {
   /***** YouMove Part *****/
   /************************/
 
-  watchdog('Webform WeMove Module','Uninstalling module');
-  variable_del('webform_wemove__ymw_settings'); 
-  variable_del('webform_wemove__ymw_ID');
-  variable_del('webform_wemove__ymw_components');
-  variable_del('webform_wemove__ymw_contact_types');
+  //watchdog('Webform WeMove Module','Uninstalling module');
+  //variable_del('webform_wemove__ymw_settings'); 
+  //variable_del('webform_wemove__ymw_ID');
+  //variable_del('webform_wemove__ymw_components');
 
-  user_role_delete(variable_get('webform_wemove__ymw_user_role_name'));
+  //user_role_delete(variable_get('webform_wemove__ymw_user_role_name'));
 }
 
